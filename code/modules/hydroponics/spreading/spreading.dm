@@ -13,8 +13,8 @@
 	pass_flags = PASSTABLE | PASSGRILLE | PASSGIRDER | PASSMACHINE
 	mouse_opacity = 1
 
-	health = 10
-	maxHealth = 100
+	var/health = 10
+	var/max_health = 100
 	var/list/turf/simulated/floor/neighbors = list()
 	var/turf/epicenter
 	var/datum/seed/seed
@@ -77,7 +77,7 @@
 		return
 
 	name = "[seed.seed_name] vines"
-	maxHealth = round(seed.endurance/2)
+	max_health = round(seed.endurance/2)
 	if(seed.spread == 1)
 		limited_growth = 1
 		layer = CREEPER_LAYER
@@ -88,7 +88,7 @@
 	update_icon()
 
 	if(start_fully_mature)
-		health = maxHealth
+		health = max_health
 		mature_time = 0
 
 	register_event(/event/before_move, src, /obj/effect/plantsegment/proc/before_moving)
@@ -143,8 +143,8 @@
 		if(at_fringe >= round(spread_distance_limit*0.7))
 			arbitrary_measurement_of_how_lush_I_am_right_now--
 
-	if(health < maxHealth)
-		arbitrary_measurement_of_how_lush_I_am_right_now -= round(-(health - maxHealth)/(maxHealth/3))
+	if(health < max_health)
+		arbitrary_measurement_of_how_lush_I_am_right_now -= round(-(health - max_health)/(max_health/3))
 
 	arbitrary_measurement_of_how_lush_I_am_right_now = max(1, arbitrary_measurement_of_how_lush_I_am_right_now)
 
@@ -211,7 +211,7 @@
 		take_damage(W)
 		user.delayNextAttack(10)
 
-/obj/effect/plantsegment/take_damage(var/obj/item/weapon/W)
+/obj/effect/plantsegment/proc/take_damage(var/obj/item/weapon/W)
 	if(!W.force)
 		return 0
 	var/dmg = W.force
@@ -246,6 +246,6 @@
 		die_off()
 
 /obj/effect/plantsegment/proc/is_mature()
-	return (health >= (maxHealth/2) && age > mature_time)
+	return (health >= (max_health/2) && age > mature_time)
 
 #undef CREEPER_GROWTH_DISTANCE
