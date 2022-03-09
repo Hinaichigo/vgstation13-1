@@ -411,12 +411,10 @@ var/global/list/BODY_COVER_VALUE_LIST=list("[HEAD]" = COVER_PROTECTION_HEAD,"[EY
 #define DISABILITY_FLAG_BLIND       16
 #define DISABILITY_FLAG_MUTE		32
 #define DISABILITY_FLAG_VEGAN		64
-#define DISABILITY_FLAG_ASTHMA 		128
+#define DISABILITY_FLAG_ASTHMA 128
 #define DISABILITY_FLAG_LACTOSE		256
 #define DISABILITY_FLAG_LISP		512
 #define DISABILITY_FLAG_ANEMIA		1024
-#define DISABILITY_FLAG_PACIFIST	2048
-#define DISABILITY_FLAG_TOURETTES	4096
 
 ///////////////////////////////////////
 // MUTATIONS
@@ -509,10 +507,9 @@ var/global/list/NOIRMATRIX = list(0.33,0.33,0.33,0,\
 #define COUGHING		4
 #define TOURETTES		8
 #define NERVOUS			16
-#define ASTHMA			32
-#define LACTOSE			64
-#define ANEMIA			128
-#define PACIFIST		256
+#define ASTHMA		32
+#define LACTOSE		64
+#define ANEMIA		128
 
 //sdisabilities
 #define BLIND			1
@@ -1405,8 +1402,11 @@ var/proccalls = 1
 #define GRUE_JUVENILE 2
 #define GRUE_ADULT 3
 #define GRUE_WALLBREAK 3//Beings to eat before able to break walls
-#define GRUE_RWALLBREAK 4 //Beings to eat before able to break reinforced walls
-
+#define GRUE_RWALLBREAK 5 //Beings to eat before able to break reinforced walls
+#define GRUE_DARK 0 //dark enough for healing
+#define GRUE_DIM 1	//light level neither heals nor burns
+#define GRUE_LIGHT 2//bright enough to burn
+#define GRUE_DRAINLIGHT 1 //Channeling the drain light ability
 /*
  *
  *
@@ -1703,7 +1703,7 @@ var/proccalls = 1
 #define ESPORTS_CULTISTS "Team Geometer"
 #define ESPORTS_SECURITY "Team Security"
 
-#define DNA_SE_LENGTH 60
+#define DNA_SE_LENGTH 59
 
 #define VOX_SHAPED "Vox","Skeletal Vox"
 #define GREY_SHAPED "Grey"

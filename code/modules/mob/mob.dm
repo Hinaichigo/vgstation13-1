@@ -1794,7 +1794,7 @@ Use this proc preferably at the end of an equipment loadout
 /mob/shuttle_act()
 	return
 
-/mob/shuttle_rotate(angle)
+/mob/map_element_rotate(angle)
 	src.dir = turn(src.dir, -angle) //rotating pixel_x and pixel_y is bad
 
 /mob/can_shuttle_move()
@@ -2120,7 +2120,7 @@ Use this proc preferably at the end of an equipment loadout
 	if(A && A.flags & NO_PACIFICATION)
 		return FALSE
 
-	if (disabilities & PACIFIST || (reagents && (reagents.has_reagent(CHILLWAX) || (reagents.has_reagent(INCENSE_POPPIES) && prob(50)))))
+	if (reagents && (reagents.has_reagent(CHILLWAX) || (reagents.has_reagent(INCENSE_POPPIES) && prob(50))))
 		switch (message)
 			if (VIOLENCE_DEFAULT)//unarmed, melee weapon, spell
 				to_chat(src, "<span class='notice'>[pick("Like...violence...what is it even good for?","Nah, you don't feel like doing that.","What did \the [target] even do to you? Chill out.")]</span>")

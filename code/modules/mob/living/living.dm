@@ -18,6 +18,12 @@
 
 	immune_system = new (src)
 
+/mob/living/create_reagents(const/max_vol)
+	..(max_vol)
+	addicted_chems = new /datum/reagents(max_vol)
+	addicted_chems.my_atom = src
+	tolerated_chems = list()
+
 /mob/living/Destroy()
 	for(var/mob/living/silicon/robot/mommi/MoMMI in player_list)
 		for(var/image/I in static_overlays)
@@ -1726,7 +1732,7 @@ Thanks.
 	stop_pulling()
 	Stun(stun_amount)
 	Knockdown(weaken_amount)
-	score["slips"]++
+	score.slips++
 	return 1
 
 ///////////////////////DISEASE STUFF///////////////////////////////////////////////////////////////////

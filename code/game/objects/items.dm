@@ -86,6 +86,11 @@
 	..()
 	for(var/path in actions_types)
 		new path(src)
+	if(breakable_flags)	//Initialize health and maxHealth to the same value if only one is specified.
+		if(isnull(health) && maxHealth)
+			health = maxHealth
+		else if(isnull(maxHealth) && health)
+			maxHealth = health
 
 /obj/item/Destroy()
 	infected_items -= src
@@ -1358,7 +1363,6 @@ var/global/list/image/blood_overlays = list()
 	else
 		M.LAssailant = user
 		M.assaulted_by(user)
-
 	log_attack("[user.name] ([user.ckey]) Attempted to restrain [M.name] ([M.ckey]) with \the [src].")
 	return TRUE
 
