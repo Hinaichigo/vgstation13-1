@@ -1827,7 +1827,15 @@ var/list/weekend_days = list("Friday", "Saturday", "Sunday")
 #define COIN_HEADS "heads-up."
 #define COIN_TAILS "tails-up."
 #define COIN_SIDE "on the side!"
+#define COIN_SUPERPOSITION "in a superposition of heads and tails!"
 
 //Muzzles
 #define MUZZLE_SOFT 1	//Muzzle causes muffled speech.
 #define MUZZLE_HARD	2	//Muzzle prevents speech.
+
+//Indeterminacy levels
+#define INDET_LVL_1 1 to 25
+#define INDET_LVL_2 26 to 50
+#define INDET_LVL_3 51 to 75
+#define INDET_LVL_4 76 to 100
+

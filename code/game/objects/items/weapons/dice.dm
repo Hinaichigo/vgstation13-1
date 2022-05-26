@@ -86,20 +86,29 @@
 	update_icon()
 	if(multiplier)
 		result = (result - 1) * multiplier
+	var/on_in
+	if(result >= 0)
+		on_in = TRUE
+	else
+		on_in = FALSE
 	if(!thrown) //Dice was rolled in someone's hand
-		user.visible_message("<span class='notice'>[user] has thrown [src]. It lands on [result]. [comment]</span>", \
-							 "<span class='notice'>You throw [src]. It lands on [result]. [comment]</span>", \
-							 "<span class='notice'>You hear [src] landing on [result]. [comment]</span>")
+		user.visible_message("<span class='notice'>[user] has thrown [src]. It lands [on_in ? "on [result]." : "in a superposition!"] [comment]</span>", \
+							 "<span class='notice'>You throw [src]. It lands [on_in ? "on [result]." : "in a superposition!"] [comment]</span>", \
+							 "<span class='notice'>You hear [src] landing [on_in ? "on [result]." : "in a superposition!"] [comment]</span>")
 	else if(src.throwing == 0) //Dice was thrown and is coming to rest
-		visible_message("<span class='notice'>[src] rolls to a stop, landing on [result]. [comment]</span>")
+		visible_message("<span class='notice'>[src] rolls to a stop, landing [on_in ? "on [result]." : "in a superposition!"] [comment]</span>")
 
 /obj/item/weapon/dice/proc/diceroll(mob/user as mob, thrown)
 	result = rand(minsides, sides)
+	if(prob(indeterminacy))
+		result = -1
 	show_roll(user, thrown, result)
 
 /obj/item/weapon/dice/loaded/diceroll(mob/user as mob, thrown)
 	result = rand(minsides, sides * 1.5)
 	result = min(result, sides)
+	if(prob(indeterminacy))
+		result = -1
 	show_roll(user, thrown, result)
 
 /obj/item/weapon/dice/d4/Crossed(var/mob/living/carbon/human/H)
@@ -151,7 +160,7 @@
 
 /obj/item/weapon/dice/d20/cursed
 	name = "\improper Mysterious d20"
-	desc = "Something about this dice seems wrong."
+	desc = "Something about this die seems wrong."
 	var/deactivated = 0 //Eventually the dice runs out of power
 	var/infinite = 0 //dice with 1 will not run out
 	mech_flags = MECH_SCAN_ILLEGAL

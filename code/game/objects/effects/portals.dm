@@ -180,6 +180,7 @@ var/list/portal_cache = list()
 				var/mob/target = M
 				if(target.mind && owner)
 					log_attack("[target.name]([target.ckey]) entered a portal made by [owner.name]([owner.ckey]) at [loc]([x],[y],[z]), exiting at [target.loc]([target.x],[target.y],[target.z]).")
+			return TRUE
 
 /obj/effect/portal/beam_connect(var/obj/effect/beam/B)
 	if(istype(B))
@@ -303,3 +304,276 @@ var/list/portal_cache = list()
 
 /obj/effect/portal/permanent/make_lifespan()
 	return
+
+/obj/effect/portal/scrambling //A portal that scrambles things that enter it based on indeterminacy.
+
+/obj/effect/portal/scrambling/teleport(atom/movable/M as mob|obj)
+	if(!..())
+		return
+	portal_scramble_major(M)
+
+/obj/effect/portal/scrambling/proc/portal_scramble_major(atom/movable/M as mob|obj)
+	if(isliving(M))
+		var/mob/living/newbodytype
+		var/mob/living/newbody
+		var/newbodyspecies
+		var/must_do_next
+		if(indeterminacy_level() == 4) //If it's level 4 we can swap between carbon, animal, and silicon.
+			if(prob(indeterminacy))
+				switch(rand(1,10))
+					if(1)
+						newbodytype = /mob/living/simple_animal
+					if(2) //todo: put this back
+						newbodytype = /mob/living/silicon
+					else
+						switch(rand(1,10))
+							if(1)
+								newbodytype = /mob/living/carbon/monkey
+							else
+								newbodytype = /mob/living/carbon/human
+				must_do_next = TRUE
+		if(indeterminacy_level() >= 3) //If it's level 3 we can swap human species and monkeyhood, or silicon types.
+			if(prob(indeterminacy) || must_do_next)
+				if(iscarbon(M) || ispath(newbodytype, /mob/living/carbon))
+					if(ispath(newbodytype, /mob/living/carbon/monkey))
+						switch(rand(1,10))
+							if(1)
+								newbodytype = /mob/living/carbon/monkey/grey
+							if(2)
+								newbodytype = /mob/living/carbon/monkey/unathi
+							if(3)
+								newbodytype = /mob/living/carbon/monkey/tajara
+							if(4)
+								newbodytype = /mob/living/carbon/monkey/mushroom
+							else
+								newbodytype = /mob/living/carbon/monkey
+					else if(ispath(newbodytype, /mob/living/carbon/human))
+						switch(rand(1,100))
+							if(1)
+								newbodyspecies = "Unathi" //todo: change these (probs and possible types)
+							if(2)
+								newbodyspecies = "Tajaran"
+							if(3)
+								newbodyspecies = "Skrell"
+							if(4)
+								newbodyspecies = "Diona"
+							if(6)
+								newbodyspecies = "Slime"
+							if(7 to 9)
+								newbodyspecies = "Mushroom"
+							if(10 to 12)
+								newbodyspecies = "Insectoid"
+							if(13 to 15)
+								newbodyspecies = "Vox"
+							if(16 to 18)
+								newbodyspecies = "Grey"
+							if(19 to 21)
+								newbodyspecies = "Plasmaman"
+							else
+								switch(indeterminacy_level() >= 4 && rand(1,8)) //todo: put this back to 100
+									if(1)
+										newbodyspecies = "Umbra"
+									if(2)
+										newbodyspecies = "Undead"
+									if(3)
+										newbodyspecies = "Ghoul"
+									if(4)
+										newbodyspecies = "Golem"
+									if(5)
+										newbodyspecies = "Muton"
+									if(6)
+										newbodyspecies = "Skeletal Vox"
+									if(7)
+										newbodyspecies = "Skellington"
+									else
+										newbodyspecies = "Human"
+
+				else if(issilicon(M) || ispath(newbodytype, /mob/living/silicon))
+					switch(rand(1,100))
+						if(1 to 5)
+							newbodytype = /mob/living/silicon/ai
+						if(6 to 10)
+							newbodytype = /mob/living/silicon/robot/mommi
+						if(11)
+							newbodytype = /mob/living/silicon/robot/mommi/sammi
+						if(12)
+							newbodytype = /mob/living/silicon/pai
+						else
+							newbodytype = /mob/living/silicon/robot
+				else if(isanimal(M) || ispath(newbody, /mob/living/simple_animal))
+					return //todo: fill this in
+				must_do_next = TRUE
+		if(must_do_next)
+			newbody = new newbodytype(M.loc)
+			//todo: check that this works and there isn't a better way?
+			var/mob/living/L = M
+			if(L.mind)
+				newbody.mind = L.mind
+			if(L.client)
+				newbody.client = L.client
+			qdel(L)
+			if(ishuman(newbody) && newbodyspecies)
+				var/mob/living/carbon/human/H = newbody
+				H.set_species(newbodyspecies)
+//				H.generate_name()
+			portal_scramble_minor(newbody, must_do_next)
+		else
+			portal_scramble_minor(M)
+
+		//qdel(newbodyspecies) //todo: remove this its just to stop the compile warning
+	else if(isobj(M))
+		for(var/mob/living/L in M.contents)
+			portal_scramble_major(L)
+
+/mob/proc/debug_scramble()
+	indeterminacy_trigger_prob = 100
+	wormhole_event()
+
+/obj/effect/portal/scrambling/proc/portal_scramble_minor(atom/movable/M as mob|obj, must_do_next)
+	if(indeterminacy_level() >= 2) //If it's level 2 we keep the same species but can swap name, job, uniform, identity, appearance, etc.
+		if(prob(indeterminacy) || must_do_next)
+			if(ishuman(M))
+				var/mob/living/carbon/human/H = M
+				H.generate_name()//todo should this always trigger or no?
+				//Get job, ID, uniform, etc.
+				var/list/possiblejobs = typesof(/datum/job) - /datum/job //todo: can we just subtract directly here?
+
+/*				switch(indeterminacy_level())
+					if(4) //Can be any job
+					if(3) //Can be any
+					if(2)
+					if(1)
+*/
+			scramble(UI = TRUE, M = M, prob = (must_do_next ? 100 : indeterminacy)) //todo: indent this or always call?
+//todo: add all the functionality for monkeys, sillicons, animals, as well here
+
+/*
+	if(indeterminacy_level() >= 1) //If it's level 1 we can change minor aspects of the appearance, inventory items, etc.
+
+
+	return
+
+
+
+
+		if(iscarbon(M))
+			//todo: scramble name, appearance, genetic powers, inventory, notes, flavor text?, species, disabilities, etc.
+		else if(isanimal(M))
+		else if(issilicon(M))
+			//todo: scramble
+		*/
+
+		//forcemove newbody to prev body spot (
+		//transfer mind to new body
+		//
+		//todo: prompt for the new identity. role, etc. in both major and minor
+		//todo: catbeast etc
+
+/*
+
+/obj/effect/portal/scrambling/bullet_act(var/obj/item/projectile/Proj)
+	if (!target)
+		return PROJECTILE_COLLISION_MISS
+
+	return PROJECTILE_COLLISION_PORTAL
+
+/obj/effect/portal/scrambling/Cross(atom/movable/mover, turf/target, height=1.5, air_group = 0)
+	if(istype(mover,/obj/effect/beam) || istype(mover,/obj/item/projectile/beam))
+		return 0
+	else
+		return ..()
+
+/obj/effect/portal/scrambling/proc/connect_atmospheres()
+	if(!atmos_connected)
+		if(target)
+			if(istype(target, /obj/effect/portal/scrambling))
+				var/obj/effect/portal/scrambling/P = target
+				if(get_turf(src) && get_turf(P))
+					var/valid_connection = FALSE
+					if(SSair.has_valid_zone(get_turf(src)))
+						atmos_connection = new (get_turf(src), get_turf(P))
+						valid_connection = TRUE
+					if(SSair.has_valid_zone(get_turf(P)))
+						P.atmos_connection = new (get_turf(P), get_turf(src))
+						valid_connection = TRUE
+					if(valid_connection)
+						P.atmos_connected = TRUE
+						atmos_connected = TRUE
+
+/obj/effect/portal/scrambling/proc/disconnect_atmospheres()
+	atmos_connected = FALSE
+	if(atmos_connection)
+		atmos_connection.erase()
+		atmos_connection = null
+
+/obj/effect/portal/scrambling/proc/blend_icon(var/obj/effect/portal/scrambling/P)
+	var/turf/T = P.loc
+
+	if(!("icon[initial(T.icon)]_iconstate[T.icon_state]_[type]" in portal_cache))//If the icon has not been added yet
+		var/icon/I1 = icon(icon,mask)//Generate it.
+		var/icon/I2 = icon(initial(T.icon),T.icon_state)
+		I1.Blend(I2,ICON_MULTIPLY)
+		portal_cache["icon[initial(T.icon)]_iconstate[T.icon_state]_[type]"] = I1 //And cache it!
+
+	overlays += portal_cache["icon[initial(T.icon)]_iconstate[T.icon_state]_[type]"]
+
+
+/obj/effect/portal/scrambling/beam_connect(var/obj/effect/beam/B)
+	if(istype(B))
+		if(B.HasSource(src))
+			return // Prevent infinite loops.
+		..()
+	handle_beams()
+
+/obj/effect/portal/scrambling/beam_disconnect(var/obj/effect/beam/B)
+	if(istype(B))
+		if(B.HasSource(src))
+			return // Prevent infinite loops.
+		..()
+	handle_beams()
+
+/obj/effect/portal/scrambling/handle_beams()
+	if(target && istype(target,/obj/effect/portal/scrambling))
+		var/obj/effect/portal/scrambling/PE = target
+		PE.purge_beams()
+
+	add_beams()
+
+/obj/effect/portal/scrambling/proc/purge_beams()
+	for(var/obj/effect/beam/BE in exit_beams)
+		exit_beams -= BE
+		qdel(BE)
+	if (target && istype(target,/obj/effect/portal/scrambling))
+		var/obj/effect/portal/scrambling/P = target
+		for(var/obj/effect/beam/BE in P.exit_beams)
+			P.exit_beams -= BE
+			qdel(BE)
+
+/obj/effect/portal/scrambling/proc/add_beams()
+	if((!beams) || (!beams.len) || !target || !istype(target,/obj/effect/portal/scrambling))
+		return
+
+	var/obj/effect/portal/scrambling/PE = target
+
+	for(var/obj/effect/beam/emitter/BE in beams)
+		var/list/spawners = list(src)
+		spawners |= BE.sources
+		var/obj/effect/beam/emitter/beam = new BE.type(PE.loc)
+		beam.dir = BE.dir
+		beam.power = BE.power
+		beam.steps = BE.steps+1
+		beam.emit(spawn_by=spawners)
+		PE.exit_beams += beam
+
+	for(var/obj/effect/beam/infrared/IR in beams)
+		var/list/spawners = list(src)
+		spawners |= IR.sources
+		var/obj/effect/beam/infrared/beam = new IR.type(PE.loc)
+		beam.dir = IR.dir
+		beam.steps = IR.steps+1
+		beam.visible = IR.visible
+		beam.assembly = IR.assembly
+		beam.emit(spawn_by=spawners)
+		PE.exit_beams += beam
+
+*/

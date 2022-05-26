@@ -62,6 +62,8 @@
 		flipit.Scale(0.2,1)
 		animate(transform = flipit, time = 1.5, easing = QUAD_EASING)
 		sideup = COIN_SIDE
+	if (prob(indeterminacy))
+		sideup = COIN_SUPERPOSITION
 	if(!thrown)
 		user.visible_message("<span class='notice'>[user] flips [parent]. It lands [sideup]</span>", \
 							 "<span class='notice'>You flip [parent]. It lands [sideup]</span>", \

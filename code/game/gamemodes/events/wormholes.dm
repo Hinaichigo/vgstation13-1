@@ -3,10 +3,21 @@
 		var/list/pick_turfs = list()
 		for(var/turf/simulated/floor/T in world)
 			if(T.z == map.zMainStation)
+				//Check for and avoid grilles and closed doors.
+				for(var/obj/structure/grille/G in T.contents)
+					break
+				for(var/obh/machinery/door/D in T.contents)
+					if(D.density)
+						break
 				pick_turfs += T
 
 		if(pick_turfs.len)
 			//All ready. Announce that bad juju is afoot.
+			if(prob(indeterminacy_trigger_prob)) //Potential for indeterminacy.
+				indeterminacy = 100
+				for(var/i in 1 to 2)
+					indeterminacy = min(rand(1,100), indeterminacy)
+					indeterminacy = 100 //todo: put this back
 			command_alert(/datum/command_alert/wormholes)
 			//prob(20) can be approximated to 1 wormhole every 5 turfs!
 			//admittedly less random but totally worth it >_<
@@ -48,14 +59,23 @@
 				create_wormhole(enter,exit)
 
 				sleep(sleep_duration)						//have a well deserved nap!
-
+			indeterminacy = 0
 
 //maybe this proc can even be used as an admin tool for teleporting players without ruining immulsions?
 /proc/create_wormhole(var/turf/enter as turf, var/turf/exit as turf)
-	var/obj/effect/portal/P = new /obj/effect/portal( enter )
-	P.target = exit
-	P.icon = 'icons/obj/objects.dmi'
-	P.icon_state = "anom"
-	P.name = "wormhole"
-	spawn(rand(300,600)) //This isn't useful, the new in hand tele will likely override it
-		qdel(P)
+	if(indeterminacy)
+		var/obj/effect/portal/scrambling/S = new /obj/effect/portal/scrambling( enter )
+		S.target = exit
+		S.icon = 'icons/obj/objects.dmi'
+		S.icon_state = "anom"
+		S.name = "wormhole"
+		spawn(rand(300,600)) //This isn't useful, the new in hand tele will likely override it
+			qdel(S)
+	else
+		var/obj/effect/portal/P = new /obj/effect/portal( enter )
+		P.target = exit
+		P.icon = 'icons/obj/objects.dmi'
+		P.icon_state = "anom"
+		P.name = "wormhole"
+		spawn(rand(300,600)) //This isn't useful, the new in hand tele will likely override it
+			qdel(P)

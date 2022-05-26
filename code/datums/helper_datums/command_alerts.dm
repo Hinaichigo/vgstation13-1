@@ -421,7 +421,12 @@ The access requirements on the Asteroid Shuttles' consoles have now been revoked
 	name = "Space-Time Anomalities Detected"
 	alert_title = "Anomaly Alert"
 	alert = 'sound/AI/spanomalies.ogg'
-	message = "Space-time anomalies detected on the station. There is no additional data."
+	message = "Space-time anomalies detected on the station."
+
+/datum/command_alert/wormholes/announce()
+	message += indeterminacy_message()
+	..()
+
 
 //////////////MALF ANNOUNCEMENT
 
@@ -433,7 +438,7 @@ The access requirements on the Asteroid Shuttles' consoles have now been revoked
 	theme = "malfdelta"
 	alertlevel = "delta"
 
-/datum/command_alert/malf_win 
+/datum/command_alert/malf_win
 	name = "AI Malfunctioning Win"
 	alert = 'sound/effects/static/static4.ogg'
 
