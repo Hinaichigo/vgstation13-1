@@ -1106,6 +1106,9 @@ var/list/special_fruits = list()
 /obj/item/weapon/reagent_containers/food/snacks/grown/clover/sevenleaf
 	leaves = 7
 
+/obj/item/weapon/reagent_containers/food/snacks/grown/clover/superleaf
+	leaves = -1
+
 /obj/item/weapon/reagent_containers/food/snacks/grown/clover/proc/update_leaves()
 	switch(leaves)
 		if(3)
@@ -1139,6 +1142,9 @@ var/list/special_fruits = list()
 			name = "seven-leaf clover"
 			desc = "The fates themselves are said to shower their adoration on the one who bears this legendary lucky charm."
 			luckiness = 10000
+		if(-1)
+			name = "superposition-leaf clover"
+			desc = "A cheerful little herb with... wait... huh?"
 	icon_state = "clover[leaves]"
 
 /obj/item/weapon/reagent_containers/food/snacks/grown/clover/proc/shift_leaves(var/mut = 0, var/mob/shifter)
@@ -1157,6 +1163,8 @@ var/list/special_fruits = list()
 			leaves = clamp(leaves, 0, 7)
 		else if(leaves < 0 || leaves > 7)
 			leaves = 3
+		if(leaves != 3 && prob(indeterminacy))
+			leaves = -1
 		return leaves != 3
 
 /obj/item/weapon/reagent_containers/food/snacks/grown/clover/initialize(mob/harvester)

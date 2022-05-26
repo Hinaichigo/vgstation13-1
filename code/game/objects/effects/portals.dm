@@ -348,7 +348,7 @@ var/list/portal_cache = list()
 							else
 								newbodytype = /mob/living/carbon/monkey
 					else if(ispath(newbodytype, /mob/living/carbon/human))
-						switch(rand(1,100))
+						switch(rand(1,1000))
 							if(1)
 								newbodyspecies = "Unathi" //todo: change these (probs and possible types)
 							if(2)
@@ -370,7 +370,7 @@ var/list/portal_cache = list()
 							if(19 to 21)
 								newbodyspecies = "Plasmaman"
 							else
-								switch(indeterminacy_level() >= 4 && rand(1,8)) //todo: put this back to 100
+								switch(indeterminacy_level() >= 4 ? rand(1,1000) : 0) //todo: put this back to 100
 									if(1)
 										newbodyspecies = "Umbra"
 									if(2)
@@ -405,7 +405,7 @@ var/list/portal_cache = list()
 				must_do_next = TRUE
 		if(must_do_next)
 			newbody = new newbodytype(M.loc)
-			//todo: check that this works and there isn't a better way?
+			//todo: check that this works and there isn't a better way? or if we need mind?
 			var/mob/living/L = M
 			if(L.mind)
 				newbody.mind = L.mind
@@ -419,8 +419,6 @@ var/list/portal_cache = list()
 			portal_scramble_minor(newbody, must_do_next)
 		else
 			portal_scramble_minor(M)
-
-		//qdel(newbodyspecies) //todo: remove this its just to stop the compile warning
 	else if(isobj(M))
 		for(var/mob/living/L in M.contents)
 			portal_scramble_major(L)
@@ -431,12 +429,96 @@ var/list/portal_cache = list()
 
 /obj/effect/portal/scrambling/proc/portal_scramble_minor(atom/movable/M as mob|obj, must_do_next)
 	if(indeterminacy_level() >= 2) //If it's level 2 we keep the same species but can swap name, job, uniform, identity, appearance, etc.
-		if(prob(indeterminacy) || must_do_next)
-			if(ishuman(M))
-				var/mob/living/carbon/human/H = M
-				H.generate_name()//todo should this always trigger or no?
-				//Get job, ID, uniform, etc.
-				var/list/possiblejobs = typesof(/datum/job) - /datum/job //todo: can we just subtract directly here?
+//		if(prob(indeterminacy) || must_do_next)
+		if(ishuman(M))
+			var/mob/living/carbon/human/H = M
+			//Get job, ID, uniform, etc.
+			for(var/i in 1 to 4)
+				if(prob(indeterminacy) || must_do_next)
+					switch(i)
+						if(1)	//Set appearance
+							scramble(UI = TRUE, M = M, prob = (must_do_next ? 100 : indeterminacy)) //todo: indent this or always call? or does generate_name do the trick?, might also call later in scramble level 1 or maybe its all good here
+						if(2)	//Set name
+							H.generate_name()
+						if(3)	//Set job
+							give_job_scramble(H)
+//							if(H?.mind?.assigned_role)
+//								H.say("I'm \an [H.mind.assigned_role]!")
+//							else
+//								H.say("I have no assigned role!")
+//						if(4)	//Generate uniform/clothing
+//						if(5)	//todo: other? and only keep as much as necessary of these and sync to above
+
+
+							//todo: check for same-rank uniform items to replace in recursivemob contents
+							//todo: randomized pda messages?
+							//todo: min character age for job
+							//todo: check for silicon/species bans etc?
+							//todo: different job probs?
+							//todo: different forms of weighting to get more greys, more botanists, etc in a given wormhole event?
+							//todo: put incorportate possible jobs into give_job_scramble
+							//todo: fix umbra eyes and such not working?
+							//todo: fix humans getting robot jobs and such
+//			message_admins("debug 000")
+
+/obj/effect/portal/scrambling/proc/give_job_scramble(var/mob/living/carbon/human/H)
+
+//	var/list/allpossiblejobs = subtypesof(/datum/job) //todo: does this work?
+	var/list/possiblejobs = list()
+//	message_admins("debug 001")
+	if(indeterminacy_level() < 4) //If it's level 4 we ignore the job-species restrictions, otherwise we select the jobs according to the whitelist and blacklist.
+//		message_admins("debug 002")
+		for(var/jobtype in alljobtypes) //todo: does this work?
+			var/datum/job/J = new jobtype
+//			message_admins("debug 004 [jobtype] J [J]")
+			if(H.species.name in J.species_blacklist)
+				continue
+			else if(J.species_whitelist.len)
+				if(!(H.species.name in J.species_whitelist))
+					continue
+			//else if() todo: age etc. check
+			else
+//				message_admins("adding [J] to [possiblejobs]")
+				possiblejobs += J
+	else
+//		message_admins("debug 003")
+		for(var/jobtype in alljobtypes)
+			var/datum/job/J = new jobtype
+//			message_admins("debug 005 [jobtype] J [J]")
+			possiblejobs += J
+//			message_admins("adding [J] to [possiblejobs]")
+	if(possiblejobs.len)
+		var/datum/job/newjob = pick(possiblejobs)
+//				var/datum/job/ourjob = new ourjobtype
+
+//				if(H && rank) //Based on AssignRole()
+//					var/datum/job/job = GetJob(rank)
+//				if(!job)
+//					return FALSE
+//				if(jobban_isbanned(H, rank))
+//					return FALSE
+//				if(!job.player_old_enough(H.client))
+//					return FALSE
+
+		H.mind.assigned_role = newjob.title
+		if(prob(50))
+			H.mind.role_alt_title = pick(newjob.alt_titles)
+	message_admins("debug: [H] is now [H?.mind?.assigned_role].")
+	if(H?.mind?.assigned_role)
+		H.say("I'm \an [H.mind.assigned_role]!")
+	else
+		H.say("I have no assigned role!")
+
+
+
+//		for(var/obj/machinery/computer/labor/L in labor_consoles) todo:
+//			L.updateUsrDialog()
+
+		return TRUE
+	return FALSE
+
+
+
 
 /*				switch(indeterminacy_level())
 					if(4) //Can be any job
@@ -444,7 +526,6 @@ var/list/portal_cache = list()
 					if(2)
 					if(1)
 */
-			scramble(UI = TRUE, M = M, prob = (must_do_next ? 100 : indeterminacy)) //todo: indent this or always call?
 //todo: add all the functionality for monkeys, sillicons, animals, as well here
 
 /*

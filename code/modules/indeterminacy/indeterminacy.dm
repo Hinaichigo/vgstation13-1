@@ -29,3 +29,5 @@ var/indeterminacy_trigger_prob = 100 //todo: put this back
 			return 4
 		else
 			return 0
+
+var/list/alljobtypes = subtypesof(/datum/job)
