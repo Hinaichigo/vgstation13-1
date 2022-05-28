@@ -314,27 +314,167 @@ var/list/portal_cache = list()
 
 /obj/effect/portal/scrambling/proc/portal_scramble_major(atom/movable/M as mob|obj)
 	if(isliving(M))
-		var/mob/living/newbodytype
+		var/mob/living/L = M
+		var/newbodytype
 		var/mob/living/newbody
 		var/newbodyspecies
 		var/must_do_next
-		if(indeterminacy_level() == 4) //If it's level 4 we can swap between carbon, animal, and silicon.
+
+		//At level 4:
+		//Cliented mobs can become a monkey, human, silicon, or simple animal.
+		//Noncliented mobs can only become simple animals or monkeys
+
+		//At level 3:
+		//Cliented mobs can only become their own type, except humans and monkeys can become each other.
+		//Noncliented mobs can only become simple animals or monkeys.
+
+		//That way, new silicons and humans will always have clients.
+
+		#define BECOME_ANIMAL 1
+		#define BECOME_SILICON 2
+		#define BECOME_MONKEY 3
+		#define BECOME_HUMAN 4
+
+		if(indeterminacy_level() >= 4)
 			if(prob(indeterminacy))
-				switch(rand(1,10))
-					if(1)
-						newbodytype = /mob/living/simple_animal
-					if(2) //todo: put this back
-						newbodytype = /mob/living/silicon
-					else
-						switch(rand(1,10))
+				if(L.client)
+					switch(rand(1, 20))
+						if(1)
+							newbodytype = BECOME_ANIMAL
+						if(2 to 3)
+							newbodytype = BECOME_SILICON
+						if(4)
+							newbodytype = BECOME_MONKEY
+						else
+							newbodytype = BECOME_HUMAN
+				else
+					switch(rand(1, 2))
+						if(1)
+							newbodytype = BECOME_ANIMAL
+						else
+							newbodytype = BECOME_MONKEY
+		else if(indeterminacy_level() >= 3)
+			if(prob(indeterminacy))
+				if(L.client)
+					if(iscarbon(L))
+						switch(rand(1, 10 + 10 * ishuman(L) - 8 * ismonkey(L)))
 							if(1)
-								newbodytype = /mob/living/carbon/monkey
+								newbodytype = BECOME_MONKEY
 							else
-								newbodytype = /mob/living/carbon/human
+								newbodytype = BECOME_HUMAN
+					else if(issilicon(L))
+						newbodytype = BECOME_SILICON
+					else
+						newbodytype = BECOME_ANIMAL
+				else
+					switch(rand(1, 2))
+						if(1)
+							newbodytype = BECOME_ANIMAL
+						else
+							newbodytype = BECOME_MONKEY
+
+		//Now that the general new body type is picked out, we determine the subtype.
+		//todo: make an nice list of these, possibly use a switch statement or introduce rarity and different types for different levels and such
+		if(newbodytype)
+			must_do_next = TRUE
+			switch(newbodytype)
+				if(BECOME_ANIMAL)
+					newbodytype = pick(/mob/living/simple_animal/corgi, /mob/living/simple_animal/mouse, /mob/living/simple_animal/borer) //todo bigger list
+				if(BECOME_SILICON)
+					switch(rand(1,100))
+						if(1 to 5)
+							newbodytype = /mob/living/silicon/ai
+						if(6 to 10)
+							newbodytype = /mob/living/silicon/robot/mommi
+						if(11)
+							newbodytype = /mob/living/silicon/robot/mommi/sammi
+						if(12)
+							newbodytype = /mob/living/silicon/pai
+						else
+							newbodytype = /mob/living/silicon/robot
+				if(BECOME_MONKEY)
+					switch(rand(1,10))
+						if(1)
+							newbodytype = /mob/living/carbon/monkey/grey
+						if(2)
+							newbodytype = /mob/living/carbon/monkey/unathi
+						if(3)
+							newbodytype = /mob/living/carbon/monkey/tajara
+						if(4)
+							newbodytype = /mob/living/carbon/monkey/mushroom
+						else
+							newbodytype = /mob/living/carbon/monkey
+				if(BECOME_HUMAN)
+					newbodytype = /mob/living/carbon/human
+					switch(rand(1,1000))
+						if(1)
+							newbodyspecies = "Unathi" //todo: change these (probs and possible types) //todo: possibly move this to scramble_minor
+						if(2)
+							newbodyspecies = "Tajaran"
+						if(3)
+							newbodyspecies = "Skrell"
+						if(4)
+							newbodyspecies = "Diona"
+						if(6)
+							newbodyspecies = "Slime"
+						if(7 to 9)
+							newbodyspecies = "Mushroom"
+						if(10 to 12)
+							newbodyspecies = "Insectoid"
+						if(13 to 15)
+							newbodyspecies = "Vox"
+						if(16 to 18)
+							newbodyspecies = "Grey"
+						if(19 to 21)
+							newbodyspecies = "Plasmaman"
+						else
+							switch(indeterminacy_level() >= 4 ? rand(1,1000) : 0) //todo: put this back to 100
+								if(1)
+									newbodyspecies = "Umbra"
+								if(2)
+									newbodyspecies = "Undead"
+								if(3)
+									newbodyspecies = "Ghoul"
+								if(4)
+									newbodyspecies = "Golem"
+								if(5)
+									newbodyspecies = "Muton"
+								if(6)
+									newbodyspecies = "Skeletal Vox"
+								if(7)
+									newbodyspecies = "Skellington"
+								else
+									newbodyspecies = "Human"
+
+		#undef BECOME_ANIMAL
+		#undef BECOME_SILICON
+		#undef BECOME_MONKEY
+		#undef BECOME_HUMAN
+/*
+		if(indeterminacy_level() >= 4) //If it's level 4 we can swap between carbon, animal, and silicon.
+			if(prob(indeterminacy))
+				if(L.mind && L.client)
+					switch(rand(1,10))
+						if(1)
+							newbodytype = /mob/living/simple_animal
+						if(2) //todo: put this back
+							newbodytype = /mob/living/silicon
+						else
+							switch(rand(1,10))
+								if(1)
+									newbodytype = /mob/living/carbon/monkey
+								else
+									newbodytype = /mob/living/carbon/human
+				else
+					switch(rand(1,2))
+						if(1)
+							newbodytype = /mob/living/simple_animal
+						else
+							newbodytype = /mob/living/carbon/monkey
 				must_do_next = TRUE
 		if(indeterminacy_level() >= 3) //If it's level 3 we can swap human species and monkeyhood, or silicon types.
 			if(prob(indeterminacy) || must_do_next)
-				if(iscarbon(M) || ispath(newbodytype, /mob/living/carbon))
+				if(iscarbon(L) || ispath(newbodytype, /mob/living/carbon))
 					if(ispath(newbodytype, /mob/living/carbon/monkey))
 						switch(rand(1,10))
 							if(1)
@@ -388,7 +528,7 @@ var/list/portal_cache = list()
 									else
 										newbodyspecies = "Human"
 
-				else if(issilicon(M) || ispath(newbodytype, /mob/living/silicon))
+				else if(issilicon(L) || ispath(newbodytype, /mob/living/silicon))
 					switch(rand(1,100))
 						if(1 to 5)
 							newbodytype = /mob/living/silicon/ai
@@ -400,17 +540,17 @@ var/list/portal_cache = list()
 							newbodytype = /mob/living/silicon/pai
 						else
 							newbodytype = /mob/living/silicon/robot
-				else if(isanimal(M) || ispath(newbody, /mob/living/simple_animal))
+				else if(isanimal(L) || ispath(newbody, /mob/living/simple_animal))
 					return //todo: fill this in
 				must_do_next = TRUE
+*/
 		if(must_do_next)
-			newbody = new newbodytype(M.loc)
+			newbody = new newbodytype(L.loc)
 			//todo: check that this works and there isn't a better way? or if we need mind?
-			var/mob/living/L = M
-			if(L.mind)
-				newbody.mind = L.mind
 			if(L.client)
 				newbody.client = L.client
+			//todo: take the items out of L's inventory and add them to the buffer
+			//todo: clear out notes and such and replace them with new ones or add custom notes?
 			qdel(L)
 			if(ishuman(newbody) && newbodyspecies)
 				var/mob/living/carbon/human/H = newbody
@@ -418,12 +558,12 @@ var/list/portal_cache = list()
 //				H.generate_name()
 			portal_scramble_minor(newbody, must_do_next)
 		else
-			portal_scramble_minor(M)
+			portal_scramble_minor(L)
 	else if(isobj(M))
 		for(var/mob/living/L in M.contents)
 			portal_scramble_major(L)
 
-/mob/proc/debug_scramble()
+/mob/proc/dbs()
 	indeterminacy_trigger_prob = 100
 	wormhole_event()
 
@@ -442,6 +582,8 @@ var/list/portal_cache = list()
 							H.generate_name()
 						if(3)	//Set job
 							give_job_scramble(H)
+							if(must_do_next) //If we generated a new body, generate the uniform.
+								job_master.EquipRank(H, H?.mind?.assigned_role, 0)
 //							if(H?.mind?.assigned_role)
 //								H.say("I'm \an [H.mind.assigned_role]!")
 //							else
@@ -459,17 +601,73 @@ var/list/portal_cache = list()
 							//todo: put incorportate possible jobs into give_job_scramble
 							//todo: fix umbra eyes and such not working?
 							//todo: fix humans getting robot jobs and such
+							//todo: get other people's jobs and such?
+							//todo: acount for mindless people getting jobs or maybe dont have mindless people go thru the wormholes or not have them get generated.
+							//todo: Your memory, however hazy, is full.
+							//todo: NOPE job
+							//todo: assitant being naked
+							//todo: warden clothes as a microbiologist
+							//todo: add flag to wormhole spawned clothes/items to avoid them overfilling the buffer
+							////make it so humans can swap into monkeys even at level 3?
+							//todo: mob buffer so existing mobs can get cycled back in, timestop them and store them somewhere maybe
+							//todo: adjust probs
+							//todo: spaces after commas
+							//todo: shift human species even at level 2?
+							//todo: slimes as monkeys and whatnot
+							//todo: remove hand starting stuff to make it seem more "lived in", hunger, bloodstains, etc. deep fried, whatnot etc
+							//todo: your species cannot wear workboots for tajaran
+							//todo: Runtime in mouse.dm, line 62: Cannot read null.loc
+							//todo: trader or no (misc_positions)
+							//todo: still give clothing or make "visitor" or something if no valid job for that race?
+							//todo: simplify lvl4 lvl3 job selection
+							//todo: get multiple copies of a scrambled mob in the buffer
+							//todo: stick only with natural hair colors and stuff (unless level 4?)
+							//todo:// Runtime in update_icons.dm, line 1142: cannot read from list
+							//proc name: update inv wear mask (/mob/living/carbon/human/update_inv_wear_mask)
+
 //			message_admins("debug 000")
 
 /obj/effect/portal/scrambling/proc/give_job_scramble(var/mob/living/carbon/human/H)
-
-//	var/list/allpossiblejobs = subtypesof(/datum/job) //todo: does this work?
 	var/list/possiblejobs = list()
-//	message_admins("debug 001")
+	for(var/jobtype in all_jobs_txt + misc_positions) //todo: does this work?
+		var/datum/job/J = job_master.GetJob(jobtype)
+		if(indeterminacy_level() < 4) //If it's level 4 we ignore the job-species restrictions, otherwise we select the jobs according to the whitelist and blacklist.
+			if(H.species.name in J.species_blacklist)
+				continue
+			else if(J.species_whitelist.len)
+				if(!(H.species.name in J.species_whitelist))
+					continue
+		possiblejobs += J
+	if(possiblejobs.len)
+		var/datum/job/newjob = pick(possiblejobs)
+		if(H.mind)
+			H.mind.assigned_role = newjob.title
+			if(prob(50))
+				H.mind.role_alt_title = pick(newjob.alt_titles)
+	if(H?.mind?.assigned_role)
+		H.say("I'm \an [H.mind.assigned_role]!") //todo: remove this
+		return TRUE
+	else
+		H.say("I have no assigned role!")
+		return FALSE
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
 	if(indeterminacy_level() < 4) //If it's level 4 we ignore the job-species restrictions, otherwise we select the jobs according to the whitelist and blacklist.
 //		message_admins("debug 002")
-		for(var/jobtype in alljobtypes) //todo: does this work?
-			var/datum/job/J = new jobtype
+		for(var/jobtype in all_jobs_txt + misc_positions) //todo: does this work?
+			var/datum/job/J = job_master.GetJob(jobtype)
 //			message_admins("debug 004 [jobtype] J [J]")
 			if(H.species.name in J.species_blacklist)
 				continue
@@ -482,13 +680,16 @@ var/list/portal_cache = list()
 				possiblejobs += J
 	else
 //		message_admins("debug 003")
-		for(var/jobtype in alljobtypes)
-			var/datum/job/J = new jobtype
+		for(var/jobtype in all_jobs_txt + misc_positions)
+			var/datum/job/J = job_master.GetJob(jobtype)
 //			message_admins("debug 005 [jobtype] J [J]")
 			possiblejobs += J
 //			message_admins("adding [J] to [possiblejobs]")
 	if(possiblejobs.len)
 		var/datum/job/newjob = pick(possiblejobs)
+
+*/
+
 //				var/datum/job/ourjob = new ourjobtype
 
 //				if(H && rank) //Based on AssignRole()
@@ -499,23 +700,6 @@ var/list/portal_cache = list()
 //					return FALSE
 //				if(!job.player_old_enough(H.client))
 //					return FALSE
-
-		H.mind.assigned_role = newjob.title
-		if(prob(50))
-			H.mind.role_alt_title = pick(newjob.alt_titles)
-	message_admins("debug: [H] is now [H?.mind?.assigned_role].")
-	if(H?.mind?.assigned_role)
-		H.say("I'm \an [H.mind.assigned_role]!")
-	else
-		H.say("I have no assigned role!")
-
-
-
-//		for(var/obj/machinery/computer/labor/L in labor_consoles) todo:
-//			L.updateUsrDialog()
-
-		return TRUE
-	return FALSE
 
 
 

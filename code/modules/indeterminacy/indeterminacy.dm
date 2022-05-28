@@ -30,4 +30,8 @@ var/indeterminacy_trigger_prob = 100 //todo: put this back
 		else
 			return 0
 
-var/list/alljobtypes = subtypesof(/datum/job)
+/var/list/indeterminacy_item_buffer() //Stores items taken from people going through 5D wormholes.
+
+/var/list/indeterminacy_mob_buffer() //Stores mobs that go through 5D wormholes.
+
+//var/list/alljobtypes = subtypesof(/datum/job)
