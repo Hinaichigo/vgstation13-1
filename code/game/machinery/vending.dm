@@ -3742,9 +3742,9 @@ var/global/num_vending_terminals = 1
 		)
 	prices = list(
 		/obj/item/toy/lotto_ticket/gold_rush = 5,
-		/obj/item/toy/lotto_ticket/diamond_hands = 10,
-		/obj/item/toy/lotto_ticket/phazon_fortune = 20,
-		/obj/item/toy/lotto_ticket/supermatter_surprise = 50
+		/obj/item/toy/lotto_ticket/diamond_hands = 20,
+		/obj/item/toy/lotto_ticket/phazon_fortune = 50,
+		/obj/item/toy/lotto_ticket/supermatter_surprise = 75
 		)
 
 	pack = /obj/structure/vendomatpack/lotto
