@@ -55,7 +55,7 @@
 /obj/item/weapon/gun/projectile/railgun/update_icon()
 	overlays.len = 0
 
-	if(istype(loadedammo, /obj/item/weapon/coin))
+	if(iscoin(loadedammo))
 		var/image/coin = image('icons/obj/weaponsmithing.dmi', src, "railgun_coin_overlay")
 		overlays += coin
 	else if (loadedammo)
