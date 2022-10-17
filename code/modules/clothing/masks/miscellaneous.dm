@@ -123,6 +123,7 @@
 	body_parts_covered = FACE
 	w_class = W_CLASS_SMALL
 	siemens_coefficient = 0.9
+	clothing_flags = MASKINTERNALS
 
 /obj/item/clothing/mask/horsehead
 	name = "horse head mask"
@@ -135,6 +136,7 @@
 	w_class = W_CLASS_SMALL
 	var/voicechange = 0
 	siemens_coefficient = 0.9
+	clothing_flags = MASKINTERNALS
 
 /obj/item/clothing/mask/horsehead/affect_speech(var/datum/speech/speech, var/mob/living/L)
 	if(src.voicechange)
@@ -168,6 +170,7 @@
 	body_parts_covered = FACE
 	w_class = W_CLASS_SMALL
 	gas_transfer_coefficient = 0.90
+	clothing_flags = MASKINTERNALS
 
 /obj/item/clothing/mask/bandana
 	name = "bandana"
@@ -186,6 +189,7 @@
 	desc = "Express your happiness or hide your sorrows with this laughing face with crying tears of joy cutout."
 	icon_state = "joy"
 	species_fit = list(INSECT_SHAPED)
+	clothing_flags = MASKINTERNALS
 
 /obj/item/clothing/mask/vamp_fangs
 	name = "false fangs"
@@ -243,6 +247,7 @@
 	item_state = "goldenmask"
 	species_fit = list(INSECT_SHAPED)
 	autoignition_temperature = null
+	clothing_flags = MASKINTERNALS
 
 /obj/item/clothing/mask/goldface/equipped()
 	..()
