@@ -144,6 +144,7 @@
 
 /obj/item/clothing/mask/horsehead/magic
 	voicechange = 1		//NEEEEIIGHH
+	clothing_flags = 0
 
 /obj/item/clothing/mask/horsehead/magic/dropped(mob/user as mob)
 	canremove = 1
