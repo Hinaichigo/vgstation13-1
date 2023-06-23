@@ -49,6 +49,7 @@
 #define SS_PRIORITY_ENGINES		   89
 #define SS_PRIORITY_PIPENET        85
 #define SS_PRIORITY_AIR            70
+#define SS_DISPLAY_FLUIDS		   67
 #define SS_PRIORITY_EVENT          65
 #define SS_PRIORITY_DISEASE        60
 #define SS_PRIORITY_FAST_MACHINERY 55
@@ -69,6 +70,7 @@
 #define SS_WAIT_FAST_OBJECTS        0.5 SECONDS
 #define SS_WAIT_TICKER              2 SECONDS
 #define SS_WAIT_ENGINES				30 SECONDS
+#define SS_WAIT_FLUIDS				0.5 SECONDS
 
 #define SS_DISPLAY_TIMER          -110
 #define SS_DISPLAY_GARBAGE        -100
@@ -81,6 +83,7 @@
 #define SS_DISPLAY_MACHINERY      -50
 #define SS_DISPLAY_BOTS           -45
 #define SS_DISPLAY_PIPENET        -40
+#define SS_DISPLAY_FLUIDS		  -35
 #define SS_DISPLAY_FAST_MACHINERY -30
 #define SS_DISPLAY_PLANT          -25
 #define SS_DISPLAY_POWER          -20

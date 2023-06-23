@@ -1855,3 +1855,13 @@ var/list/weekend_days = list("Friday", "Saturday", "Sunday")
 //Cooking-related temperatures
 #define COOKTEMP_DEFAULT (T0C + 316) //Default cooking temperature, around 600 F
 #define COOKTEMP_HUMANSAFE (BODYTEMP_HEAT_DAMAGE_LIMIT - 1) //Human-safe temperature for cooked food, 1 degree less than the threshold for burning a human.
+
+//Puddles
+//todo: restore after testing
+#define PUDDLE_VOL_THRESH_EXIST 0 //Volume in u below which a puddle disappears.
+#define PUDDLE_VOL_THRESH_PUDDLE 2 //Volume in u at which a puddle goes from a spatter to a small puddle.
+#define PUDDLE_VOL_THRESH_POOL 5 //Volume in u at which a puddle goes from a round puddle to large pool.
+#define PUDDLE_VOL_THRESH_SPREAD 10 //Volume in u beyond which a puddle can flow to other tiles.
+//#define PUDDLE_VOL_THRESH_PUDDLE 50 //Volume in u at which a puddle goes from a spatter to a small puddle.
+//#define PUDDLE_VOL_THRESH_POOL 250 //Volume in u at which a puddle goes from a round puddle to large pool.
+//#define PUDDLE_VOL_THRESH_SPREAD 1000 //Volume in u beyond which a puddle can flow to other tiles.
