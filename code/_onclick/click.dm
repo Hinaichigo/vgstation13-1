@@ -382,8 +382,8 @@
 		to_chat(src, "<span class='warning'>You're out of energy!  You need food!</span>")
 
 // Simple helper to face what you clicked on, in case it should be needed in more than one place
-/mob/proc/face_atom(var/atom/A)
-	if(stat != CONSCIOUS || locked_to || !A || !x || !y || !A.x || !A.y )
+/mob/proc/face_atom(var/atom/A, var/observer = FALSE)
+	if((!observer && (stat != CONSCIOUS || locked_to )) || !A || !x || !y || !A.x || !A.y )
 		return
 
 	var/dx = A.x - x
@@ -399,25 +399,22 @@
 		else if(A.pixel_x < -16)
 			change_dir(WEST)
 
+	else
+		if(abs(dx) < abs(dy))
+			if(dy > 0)
+				change_dir(NORTH)
+			else
+				change_dir(SOUTH)
+		else
+			if(dx > 0)
+				change_dir(EAST)
+			else
+				change_dir(WEST)
+
+	if(!observer)
 		INVOKE_EVENT(src, /event/before_move)
 		INVOKE_EVENT(src, /event/face)
 		INVOKE_EVENT(src, /event/after_move)
-		return
-
-	if(abs(dx) < abs(dy))
-		if(dy > 0)
-			change_dir(NORTH)
-		else
-			change_dir(SOUTH)
-	else
-		if(dx > 0)
-			change_dir(EAST)
-		else
-			change_dir(WEST)
-
-	INVOKE_EVENT(src, /event/before_move)
-	INVOKE_EVENT(src, /event/face)
-	INVOKE_EVENT(src, /event/after_move)
 
 
 // File renamed to mouse.dm?
