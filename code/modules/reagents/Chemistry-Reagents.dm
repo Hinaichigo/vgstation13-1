@@ -1023,19 +1023,62 @@
 /datum/reagent/minttoxin
 	name = "Mint Toxin"
 	id = MINTTOXIN
-	description = "Useful for dealing with undesirable customers."
+	description = "Useful for dealing with undesirable customers. The undiluted version of Mint Extract."
 	reagent_state = REAGENT_STATE_LIQUID
 	color = "#CF3600" //rgb: 207, 54, 0
 	density = 0.898
 	specheatcap = 3.58
+	custom_metabolism = 0.01 //so it lasts 10x as long as regular minttox
+	var/fatgokaboom = TRUE
+	nutriment_factor = 2.5 * REAGENTS_METABOLISM //about as nutritious as sugar
+	sport = SPORTINESS_SUGAR //a small performance boost from being COOL AND FRESH
+	var/chillcounter = 0
 
 /datum/reagent/minttoxin/on_mob_life(var/mob/living/M, var/alien)
 
 	if(..())
 		return 1
 
-	if(M_FAT in M.mutations)
+	if(prob(5))
+		to_chat(M, "<span class='notice'>[pick("You feel minty fresh!","If freshness could kill you'd be a serial killer!","You feel the strange urge to share this minty freshness with others!","You have a sudden craving to drink ice cold water.","Ahh, so refreshing!")]</span>")
+
+	if(M.bodytemperature > 310) //copypasted from the cold drinks check so I don't have to change minttox internally and maybe most certainly break shit in the process
+		M.bodytemperature = max(310, M.bodytemperature + (-5 * TEMPERATURE_DAMAGE_COEFFICIENT)) //that minty freshness my dude, chill out
+
+	if(fatgokaboom && M_FAT in M.mutations)
 		M.gib()
+		
+	if(ishuman(M))
+		var/mob/living/carbon/human/H = M
+		if(holder.has_any_reagents(COLDDRINKS) & prob(25))
+			var/datum/butchering_product/teeth/J = locate(/datum/butchering_product/teeth) in H.butchering_drops
+			if(J.amount == 0)
+				return
+			else
+				H.custom_pain(pick("AHHH YOUR TEETH HURT!","You didn't know you had a cavity. You do now.","DAMN YOUR TEETH HURT"),5)
+				holder.add_reagent(SACID,1) //just a smidgeon
+				chillcounter = 30 //60 seconds
+
+		if(chillcounter > 0)
+			chillcounter--
+			if(holder.has_any_reagents(HOTDRINKS) & prob(30))
+				var/datum/butchering_product/teeth/J = locate(/datum/butchering_product/teeth) in H.butchering_drops
+				if(J.amount == 0)
+					return
+				else
+					J.amount = 0
+					H.custom_pain("Your teeth crack and tremble before breaking all of a sudden! THE PAIN!", 100) //you dun fucked up lad
+					H.pain_level = BASE_CARBON_PAIN_RESIST + 25 //pain threshold + 25, so you go into shock from pain
+					playsound(H, 'sound/effects/toothshatter.ogg', 50, 1)
+					H.audible_scream()
+					H.adjustBruteLoss(50) //imagine all your teeth violently exploding, shrapnel and shit
+
+/datum/reagent/minttoxin/essence
+	name = "Mint Essence"
+	id = MINTESSENCE
+	description = "Minty freshness in liquid form!"
+	custom_metabolism = 0.1 //toxin lasts 10x as long
+	fatgokaboom = FALSE
 
 /datum/reagent/slimetoxin
 	name = "Mutation Toxin"
@@ -2452,7 +2495,8 @@
 				H.update_inv_by_slot(C.slot_flags)
 
 		M.clean_blood()
-		M.color = ""
+		if(!iswizconvert(M))
+			M.color = ""
 
 /datum/reagent/space_cleaner/bleach
 	name = "Bleach"
@@ -2497,7 +2541,8 @@
 					H.drip(10)
 				else if(prob(5))
 					H.vomit()
-	M.color = ""
+	if(!iswizconvert(M))
+		M.color = ""
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		if(H.species.anatomy_flags & MULTICOLOR && !(initial(H.species.anatomy_flags) & MULTICOLOR))
@@ -2510,7 +2555,8 @@
 	if(..())
 		return 1
 
-	M.color = ""
+	if(!iswizconvert(M))
+		M.color = ""
 
 	if(method == TOUCH && ((TARGET_EYES in zone_sels) || (LIMB_HEAD in zone_sels)))
 		if(ishuman(M))
@@ -4839,7 +4885,7 @@ var/procizine_tolerance = 0
 			if(prob(50))
 				H.Mute(1)
 			else
-				H.visible_message("<span class='notice'>[src] spills their spaghetti.</span>","<span class='notice'>You spill your spaghetti.</span>")
+				H.visible_message("<span class='notice'>[H] spills their spaghetti.</span>","<span class='notice'>You spill your spaghetti.</span>")
 				var/turf/T = get_turf(M)
 				new /obj/effect/decal/cleanable/spaghetti_spill(T)
 				playsound(M, 'sound/effects/splat.ogg', 50, 1)
@@ -5498,7 +5544,7 @@ var/procizine_tolerance = 0
 	nutriment_factor = 20 * REAGENTS_METABOLISM
 	color = "#302000" //rgb: 48, 32, 0
 	density = 0.9185
-	specheatcap = 2.402	
+	specheatcap = 2.402
 	var/has_had_heart_explode = 0
 
 /datum/reagent/cornoil/on_mob_life(var/mob/living/M)
@@ -9113,7 +9159,8 @@ var/global/list/tonio_doesnt_remove=list("tonio", "blood")
 /datum/reagent/fishbleach/on_mob_life(var/mob/living/carbon/human/H)
 	if(..())
 		return 1
-	H.color = "#12A7C9"
+	if(!iswizconvert(H))
+		H.color = "#12A7C9"
 	return
 
 /datum/reagent/roach_shell
@@ -9615,12 +9662,12 @@ var/global/list/tonio_doesnt_remove=list("tonio", "blood")
 
 
 /datum/reagent/colorful_reagent/on_mob_life(mob/living/M)
-	if(M && isliving(M))
+	if(M && isliving(M) && !iswizconvert(M))
 		M.color = pick(random_color_list)
 	..()
 
 /datum/reagent/colorful_reagent/reaction_mob(mob/living/M, reac_volume)
-	if(M && isliving(M))
+	if(M && isliving(M) && !iswizconvert(M))
 		M.color = pick(random_color_list)
 	..()
 
@@ -10142,3 +10189,19 @@ var/global/list/tonio_doesnt_remove=list("tonio", "blood")
 	specheatcap = 0.45
 	density = 7.874
 	var/mute_duration = 300 //30 seconds
+
+/datum/reagent/fake_creep // Used to spread xenomorph creep. Why? Well, why not?
+	name = "Dan's Grape Drank"
+	id = FAKE_CREEP
+	description = "Discount Dan's award-winning grape drink. Limited production run! Now with added peanuts!"
+	reagent_state = REAGENT_STATE_LIQUID
+	color = "#6F2DA8" // 111, 45, 168
+
+/datum/reagent/fake_creep/reaction_turf(var/turf/simulated/T, var/volume)
+
+	if(..())
+		return 1
+
+	if(volume >= 1)
+		if(!locate(/obj/effect/alien/weeds) in T)
+			new /obj/effect/alien/weeds(T)

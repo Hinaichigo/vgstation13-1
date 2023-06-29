@@ -218,6 +218,7 @@ var/list/uplink_items = list()
 	item = /obj/effect/spawner/newbomb/timer
 	cost = 25
 	refundable = TRUE
+	num_in_stock = 3
 
 /datum/uplink_item/nukeprice/robot
 	name = "Syndicate-modified Combat Robot Teleporter"
@@ -973,6 +974,14 @@ var/list/uplink_items = list()
 	item = /obj/item/weapon/reagent_containers/food/condiment/syndisauce
 	cost = 8
 	discounted_cost = 2
+	jobs_with_discount = list("Chef")
+
+/datum/uplink_item/jobspecific/service/boxofmints
+	name = "Box of Mints"
+	desc = "Fifty of the highest quality mint candies this side of the galaxy. Recalled by all producers soon after their immediately lethal efects on fat people were discovered. Harmless to fit people." //It was this or just making a lame 50u bottle of mint toxin, and that's no fun.
+	item = /obj/item/weapon/storage/pill_bottle/syndiemints
+	cost = 5
+	discounted_cost = 3
 	jobs_with_discount = list("Chef")
 
 /datum/uplink_item/jobspecific/service/meatcleaver

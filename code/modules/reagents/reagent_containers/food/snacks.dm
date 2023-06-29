@@ -14,6 +14,7 @@
 					//FOOD_ANIMAL	- stuff that is made from (or contains) animal products other than meat (eggs, honey, ...). Anything that vegans won't eat!
 					//FOOD_SWEET	- sweet stuff like chocolate and candy
 					//FOOD_LACTOSE  - contains milk
+					//FOOD_DIPPABLE - can be dipped once per bite in an open reagent container, adding 1u of its content to the next bite
 
 					//Example: food_flags = FOOD_SWEET | FOOD_ANIMAL
 					//Unfortunately, food created by cooking doesn't inherit food_flags!
@@ -43,6 +44,7 @@
 	volume = 100 //Double amount snacks can carry, so that food prepared from excellent items can contain all the nutriments it deserves
 
 	var/timer = 0 //currently only used on skittering food
+	var/datum/reagents/dip
 
 /obj/item/weapon/reagent_containers/food/snacks/Destroy()
 	var/turf/T = get_turf(src)
@@ -184,6 +186,8 @@
 
 /obj/item/weapon/reagent_containers/food/snacks/New()
 	..()
+	dip = new/datum/reagents(1)
+	dip.my_atom = src
 	if (random_filling_colors?.len > 0)
 		filling_color = pick(random_filling_colors)
 
@@ -282,6 +286,8 @@
 			"<span class='notice'>You unwillingly [eatverb] some of \the [src].</span>")
 
 	var/datum/reagents/reagentreference = reagents //Even when the object is qdeleted, the reagents exist until this ref gets removed
+	var/datum/reagents/dipreference = dip
+
 	if(reagentreference)	//Handle ingestion of any reagents (Note : Foods always have reagents)
 		if(sounds)
 			playsound(eater, 'sound/items/eatfood.ogg', rand(10,50), 1)
@@ -321,6 +327,9 @@
 			for (var/ID in virus2)
 				var/datum/disease2/disease/D = virus2[ID]
 				eater.infect_disease2(D, 1, notes="(Ate an infected [src])")//eating infected food means 100% chance of infection.
+		if (dipreference && dipreference.total_volume)
+			dipreference.reaction(eater, INGEST, amount_override = 1)
+			dipreference.trans_to(eater, 1)
 		if(reagentreference.total_volume)
 			reagentreference.reaction(eater, INGEST, amount_override = min(reagentreference.total_volume,bitesize*bitesizemod)/(reagentreference.reagent_list.len))
 			spawn() //WHY IS THIS SPAWN() HERE
@@ -401,6 +410,8 @@
 
 /obj/item/weapon/reagent_containers/food/snacks/examine(mob/user)
 	..()
+	if (dip && dip.total_volume)
+		to_chat(user, "<span class='info'>\The [src] appears to have been dipped in [dip.get_master_reagent_name()].</span>")
 	if (bitecount)
 		if(bitecount == 1)
 			to_chat(user, "<span class='info'>\The [src] was bitten by someone!</span>")
@@ -510,6 +521,20 @@
 		add_fingerprint(user)
 		contents += W
 		return 1 //No afterattack here
+
+/obj/item/weapon/reagent_containers/food/snacks/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
+	..()
+	if (food_flags & FOOD_DIPPABLE)
+		if (target.is_open_container() && user.Adjacent(target))
+			var/obj/item/weapon/reagent_containers/container = target
+			if (dip && dip.total_volume)
+				to_chat(user, "<span class='warning'>\The [src] is already dipped in [dip.get_master_reagent_name()]. Take a bite before you can dip it further.</span>")
+				return
+			if (container.is_empty())
+				to_chat(user, "<span class='warning'>\The [container] is empty.</span>")
+				return
+			container.reagents.trans_to(dip, 1)
+			to_chat(user, "<span class='notice'>You dip \the [src] in [dip.get_master_reagent_name()] from \the [container].</span>")
 
 //For slipping solid junk inside food items, like hiding a PDA inside a loaf of bread or something.
 /obj/item/weapon/reagent_containers/food/snacks/proc/can_hold(obj/item/weapon/W)
@@ -717,6 +742,7 @@
 	desc = "COOKIE!!!"
 	icon_state = "COOKIE!!!"
 	base_crumb_chance = 20
+	food_flags = FOOD_DIPPABLE
 
 /obj/item/weapon/reagent_containers/food/snacks/cookie/New()
 	..()
@@ -877,7 +903,7 @@
 	name = "donut"
 	desc = "Goes great with Robust Coffee."
 	icon_state = "donut1"
-	food_flags = FOOD_SWEET | FOOD_ANIMAL //eggs are used
+	food_flags = FOOD_SWEET | FOOD_ANIMAL | FOOD_DIPPABLE //eggs are used
 	var/soggy = 0
 	base_crumb_chance = 30
 
@@ -3232,11 +3258,47 @@
 	desc = "It is only wafer thin."
 	icon_state = "mint"
 	base_crumb_chance = 0
-
+	var/safeforfat = FALSE
 /obj/item/weapon/reagent_containers/food/snacks/mint/New()
 	..()
-	reagents.add_reagent(MINTTOXIN, 1)
+	if(!safeforfat)
+		reagents.add_reagent(MINTTOXIN, 1)
+	else
+		reagents.add_reagent(MINTESSENCE, 2)
 	bitesize = 1
+
+//the syndie version for muh tators
+/obj/item/weapon/reagent_containers/food/snacks/mint/syndiemint
+	name = "mint candy"
+
+/obj/item/weapon/reagent_containers/food/snacks/mint/syndiemint/nano
+	desc = "It's not just a mint!"
+	icon_state = "nanomint"
+
+/obj/item/weapon/reagent_containers/food/snacks/mint/syndiemint/syndie
+	desc = "Made with care, love, and the blood of Nanotrasen executives kept in eternal torment."
+	icon_state = "syndiemint"
+	
+/obj/item/weapon/reagent_containers/food/snacks/mint/syndiemint/discount
+	desc = "Yeah, I wouldn't eat these if I were yo- Wait, you're still recording?"
+	icon_state = "discountmint"
+	
+/obj/item/weapon/reagent_containers/food/snacks/mint/syndiemint/homemade
+	desc = "Made with love with the finest maintenance gunk I could find, trust me. I promise there's only trace amounts of bleach."
+	icon_state = "homemademint"
+
+//The candy version for the vendors
+/obj/item/weapon/reagent_containers/food/snacks/mint/syndiemint/nano/safe
+	safeforfat = TRUE
+	
+/obj/item/weapon/reagent_containers/food/snacks/mint/syndiemint/syndie/safe
+	safeforfat = TRUE
+	
+/obj/item/weapon/reagent_containers/food/snacks/mint/syndiemint/discount/safe
+	safeforfat = TRUE
+	
+/obj/item/weapon/reagent_containers/food/snacks/mint/syndiemint/homemade/safe
+	safeforfat = TRUE
 
 /obj/item/weapon/reagent_containers/food/snacks/mushroomsoup
 	name = "chanterelle soup"
@@ -4310,7 +4372,7 @@
 	name = "sugar cookie"
 	desc = "Just like your little sister used to make."
 	icon_state = "sugarcookie"
-	food_flags = FOOD_SWEET
+	food_flags = FOOD_SWEET | FOOD_DIPPABLE
 
 /obj/item/weapon/reagent_containers/food/snacks/sugarcookie/New()
 	..()
@@ -4322,7 +4384,7 @@
 	name = "caramel cookie"
 	desc = "Just like your little sister used to make."
 	icon_state = "caramelcookie"
-	food_flags = FOOD_SWEET
+	food_flags = FOOD_SWEET | FOOD_DIPPABLE
 
 /obj/item/weapon/reagent_containers/food/snacks/caramelcookie/New()
 	..()
@@ -7287,6 +7349,7 @@ var/global/list/bomb_like_items = list(/obj/item/device/transfer_valve, /obj/ite
 	name = "cookie"
 	desc = "Oh god, it's self-replicating!"
 	icon = 'icons/obj/food2.dmi'
+	food_flags = FOOD_DIPPABLE
 
 /obj/item/weapon/reagent_containers/food/snacks/PAIcookie/New()
 	..()
