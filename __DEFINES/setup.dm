@@ -1856,12 +1856,29 @@ var/list/weekend_days = list("Friday", "Saturday", "Sunday")
 #define COOKTEMP_DEFAULT (T0C + 316) //Default cooking temperature, around 600 F
 #define COOKTEMP_HUMANSAFE (BODYTEMP_HEAT_DAMAGE_LIMIT - 1) //Human-safe temperature for cooked food, 1 degree less than the threshold for burning a human.
 
-//Puddles
+//Fluids and puddles
 //todo: restore after testing
+//todo: move these to own file?
 #define PUDDLE_VOL_THRESH_EXIST 0 //Volume in u below which a puddle disappears.
 #define PUDDLE_VOL_THRESH_PUDDLE 2 //Volume in u at which a puddle goes from a spatter to a small puddle.
-#define PUDDLE_VOL_THRESH_POOL 5 //Volume in u at which a puddle goes from a round puddle to large pool.
+#define PUDDLE_VOL_THRESH_MERGE 5 //Volume in u at which a puddle goes from a round puddle to being potentially able to merge with neighboring puddles.
 #define PUDDLE_VOL_THRESH_SPREAD 10 //Volume in u beyond which a puddle can flow to other tiles.
+#define PUDDLE_FLOW_VOL_MIN 0.1 //Volume in u below which flow won't occur. //todo: change this description
+
+#define FLUID_PROCESSING_NASCENT (1<<0) //Fluid has just been created and hasn't been added to fluids_list yet.
+#define FLUID_PROCESSING_MORIBUND (1<<1) //Fluid is to be removed from fluids_list and deleted at the end of the fluid processing step.
+#define FLUID_PROCESSING_SKIP_FLOW (1<2)
+#define FLUID_PROCESSING_SKIP_MIX (1<<3)
+#define FLUID_PROCESSING_SKIP_ABSORB (1<<4) //todo: (skips absorbtion step as the absorber, not the absorbee)
+#define FLUID_PROCESSING_SKIP_ALL FLUID_PROCESSING_SKIP_FLOW | FLUID_PROCESSING_SKIP_MIX | FLUID_PROCESSING_SKIP_ABSORB //Todo: add desc to these
+#define FLUID_PROCESSING_DELAY_FLAG_RESET (1<<5)
+//#define FLUID_PROCESSING_IMMEDIATE_DELETION (1<<4)
+
+#define FLUID_PROCESSING_STAGE_PREFLOW 1 //todo: descs
+#define FLUID_PROCESSING_STAGE_FLOW 2
+#define FLUID_PROCESSING_STAGE_POSTFLOW 3
+
+
 //#define PUDDLE_VOL_THRESH_PUDDLE 50 //Volume in u at which a puddle goes from a spatter to a small puddle.
 //#define PUDDLE_VOL_THRESH_POOL 250 //Volume in u at which a puddle goes from a round puddle to large pool.
 //#define PUDDLE_VOL_THRESH_SPREAD 1000 //Volume in u beyond which a puddle can flow to other tiles.

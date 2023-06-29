@@ -157,6 +157,15 @@
 	if(!istype(T))
 		return 1
 
+	//todo: maybe this should be handled at the reagent_holder level?
+	//todo: consider making all reagents react then forming a puddle?
+	//todo: order should change till after the reaction?
+	if (T.puddle_can_exist_in() && volume && volume >= PUDDLE_VOL_THRESH_EXIST)
+		var/obj/fluid/puddle/P = T.return_puddle()
+		if (!P)
+			P = new /obj/fluid/puddle(T)
+		holder.trans_to(P, volume)
+
 	src = null
 
 /datum/reagent/proc/metabolize(var/mob/living/M)
@@ -5498,7 +5507,7 @@ var/procizine_tolerance = 0
 	nutriment_factor = 20 * REAGENTS_METABOLISM
 	color = "#302000" //rgb: 48, 32, 0
 	density = 0.9185
-	specheatcap = 2.402	
+	specheatcap = 2.402
 	var/has_had_heart_explode = 0
 
 /datum/reagent/cornoil/on_mob_life(var/mob/living/M)
