@@ -1,7 +1,7 @@
 //Fluids as objects.
 
 /obj/fluid
-	var/fluid_flags = 0 // Flags to skip steps in a certain round of fluid processing. See setup.dm.
+	var/fluid_flags = NONE // Flags for different aspects of fluid processing. See setup.dm.
 
 /obj/fluid/New()
 	. = ..()
@@ -26,6 +26,9 @@
 	icon = 'icons/obj/puddle.dmi'
 	icon_state = "puddle0"
 	anchored = TRUE //Can move via flow, but not by being pulled around.
+	plane = ABOVE_TURF_PLANE
+	layer = PUDDLE_LAYER
+	spatter_state = //What spatter icon_state variant is used so it can be persistent across update_icon() calls.
 
 /obj/fluid/puddle/New()
 	. = ..()
@@ -67,8 +70,12 @@
 		prepare_for_deletion()
 
 /obj/fluid/proc/prepare_for_deletion()
-	fluid_flags |= (FLUID_PROCESSING_SKIP_ALL | FLUID_PROCESSING_MORIBUND)
+	fluid_flags = FLUID_PROCESSING_SKIP_ALL | FLUID_PROCESSING_MORIBUND
 	//todo: other stuff like hide the puddle and make it not do anything and stuff
+	//todo: revisit
+	icon_state = null
+	mouse_opacity = FALSE
+	timestopped = TRUE
 
 /obj/fluid/puddle/handle_flow()
 //todo: need to have flow-sink puddles not also try to be a flow-source on the same tick
@@ -82,7 +89,6 @@
 		var/list/possible_flowtarget_turfs = list()
 		var/target_fluid_diff = 0 //We flow into the neighbor with the lowest volume (random in the case of a tie) so we keep track of the highest volume difference.
 		for (var/turf/T in get_cardinal_neighbors())
-			message_admins("DEBUG 0031 [T]")
 			if (!(T.puddle_can_exist_in())) //Don't flow into walls.
 				continue
 			//todo: check for special cases like windows and stuff (maybe same criteria as a mouse entering or not.. or better yet gas permeability)
@@ -98,7 +104,6 @@
 		message_admins("DEBUG 004 [possible_flowtarget_turfs.len]")
 		if (possible_flowtarget_turfs.len)
 			var/vol_to_flow = min(flowable_volume, 0.5 * target_fluid_diff) //Don't transfer more than half of the difference in reagent volume to the new puddle.
-			message_admins("DEBUG 005")
 			var/turf/flow_target = pick(possible_flowtarget_turfs)
 			//todo: more considerations as to how much flows to the target puddle per tick (viscosity, powder versus liquid, and minimum to move based on surface tension)
 			var/obj/fluid/puddle/target_puddle = flow_target.return_puddle()
@@ -107,7 +112,9 @@
 					return
 				target_puddle = new /obj/fluid/puddle(flow_target)
 			reagents.trans_to(target_puddle, vol_to_flow)
-			target_puddle.fluid_flags |= FLUID_PROCESSING_SKIP_FLOW
+			//todo: revisit this flagging in general now that new system has been added
+			target_puddle.fluid_flags |= (FLUID_PROCESSING_SKIP_FLOW) //todo: uncomment?
+			//target_puddle.fluid_flags |= (FLUID_PROCESSING_SKIP_FLOW | FLUID_PROCESSING_SKIP_ABSORB | FLUID_PROCESSING_DELAY_FLAG_RESET) //todo: test if necessary (intended to keep a single puddle as "master"?
 			//target_puddle.update_icon() //todo: added for debug, maybe remove?
 			//todo:
 		//Puddles flow across fluid pressure gradients. Due to there being no notion of fluid layering (oil floating on water, mercury sinking in ethanol), the fluid pressure gradient is approximated by the difference in the the volume of the fluid across tiles (volume scales linearly with height once the puddle has grown beyond being a round spatter and covers the full surface area of the floor tile).
@@ -130,6 +137,8 @@
 /turf/proc/return_puddle()
 	if(src)
 		for(var/obj/fluid/puddle/P in contents)
+			if (P.fluid_flags & FLUID_PROCESSING_MORIBUND) //Don't want to return puddles that are going to be deleted on the next fluid processing tick.
+				continue
 			return P
 
 /turf/proc/return_puddle_volume() //todo: should this be fluids?
@@ -175,7 +184,10 @@ turf/create_puddle_here(add_to_fluids_list = TRUE) //We have a flag here to allo
 			new_puddle_here.fluid_flags |= (FLUID_PROCESSING_SKIP_ALL & FLUID_PROCESSING_DELAY_FLAG_RESET)
 			new_puddle_there.fluid_flags |= (FLUID_PROCESSING_SKIP_ALL & FLUID_PROCESSING_DELAY_FLAG_RESET)
 		//todo: revisit/symmetry considerations on the below?
-		fluid_flags |= FLUID_PROCESSING_SKIP_MIX //We've mixed with all potential partners so we don't need to do it again this round.
+	fluid_flags |= FLUID_PROCESSING_SKIP_MIX //We've mixed with all potential partners so we don't need to do it again this round.
+
+	//Absorbing other fluids on the same tile
+	absorb_other_fluids() //todo: do we need to do this twice (also in pre_flow?)
 
 /*
 	//Mixing //todo: decide here or during (pre)flow step?
@@ -254,7 +266,7 @@ turf/create_puddle_here(add_to_fluids_list = TRUE) //We have a flag here to allo
 /obj/fluid/puddle/proc/absorb_other_fluids() //Absorb all other fluids on the same tile.
 	if (fluid_flags & FLUID_PROCESSING_SKIP_ABSORB)
 		return
-	message_admins("[src] absorbing other fluids")
+	//message_admins("[src] absorbing other fluids")
 	for (var/obj/fluid/F in loc.contents)
 		//message_admins("checking [F]")
 		//if ((F != src)) //todo: revert this to below
@@ -274,25 +286,37 @@ turf/create_puddle_here(add_to_fluids_list = TRUE) //We have a flag here to allo
 	if (total_fluid_volume_here)
 		color = mix_color_from_reagents(reagents.reagent_list, TRUE)
 		alpha = mix_alpha_from_reagents(reagents.reagent_list, TRUE)
+	else
+		return
 	if (total_fluid_volume_here < PUDDLE_VOL_THRESH_PUDDLE)
-		icon_state = "spatter[rand(1,3)]" //todo: need to persist spatter type across ticks
+		if (!spatter_state)
+			spatter_state = rand(1,3)
+		icon_state = "spatter[spatter_state]" //todo: need to persist spatter type across ticks
 		name = "spatter"
 		desc = "A spatter of something." //todo: update all descs and names dynamically
 	else if (total_fluid_volume_here < PUDDLE_VOL_THRESH_MERGE)
 		icon_state = "puddle0" //todo: need to persist spatter type across ticks
 		name = "puddle"
 		desc = "A puddle of something." //todo: update all descs and names dynamically
+		spatter_state = null
 	else if (total_fluid_volume_here < PUDDLE_VOL_THRESH_SPREAD)
 		relativewall()
 		name = "pool"
 		desc = "A pool of something." //todo: update all descs and names dynamically
+		spatter_state = null
 	else
 		icon_state = "full"
 		name = "pool"
 		desc = "A pool of something." //todo: consider changing these for full
+		spatter_state = null
 		//todo: consider switch statement
 		//todo: add flag for updating appearance to avoid continually doing it every tick when unnecessary
 		relativewall()
+
+//todo: add check to process neighboring icons to avoid having to keep doing it
+//	else //
+//		spatter_state = null
+//		. = FLUID_PROCESSING_UPDATE_NEIGHBOR_ICONS
 
 //todo: add this (also change?)
 	//		transform = matrix(min(1, turf_on.reagents.total_volume / CIRCLE_PUDDLE_VOLUME), 0, 0, 0, min(1, turf_on.reagents.total_volume / CIRCLE_PUDDLE_VOLUME), 0)
@@ -300,9 +324,9 @@ turf/create_puddle_here(add_to_fluids_list = TRUE) //We have a flag here to allo
 /obj/fluid/puddle/findSmoothingNeighbors()
 	. = 0
 	for (var/cdir in cardinal)
-		var/turf/T = get_step(src,cdir)
+		var/turf/T = get_step(src, cdir)
 		for (var/obj/fluid/puddle/P in T)
-			if(P.total_fluid_volume_here() >= PUDDLE_VOL_THRESH_MERGE)
+			if(P.total_fluid_volume_here() >= PUDDLE_VOL_THRESH_MERGE && T.fluid_pass(cdir))
 				. |= cdir
 				break
 
@@ -317,10 +341,11 @@ turf/create_puddle_here(add_to_fluids_list = TRUE) //We have a flag here to allo
 
 /obj/fluid/puddle/proc/update_cardinal_neighbor_icons()
 	for (var/cdir in cardinal)
-		var/turf/T = get_step(src,cdir)
+		var/turf/T = get_step(src, cdir)
 		for (var/obj/fluid/puddle/P in T)
-			if(P.reagents.total_volume >= PUDDLE_VOL_THRESH_MERGE)
-				P.update_icon()
+			P.update_icon()
+			//if (P.reagents.total_volume >= PUDDLE_VOL_THRESH_MERGE)
+				//P.update_icon()
 
 /obj/fluid/proc/total_fluid_volume_here() //todo: move this? define it on a turf?
 	var/total_fluid_volume_here = 0
@@ -330,6 +355,29 @@ turf/create_puddle_here(add_to_fluids_list = TRUE) //We have a flag here to allo
 			total_fluid_volume_here += F.reagents.total_volume
 	return total_fluid_volume_here
 
+/atom/proc/fluid_pass(flow_direction)
+	return TRUE
+
+/turf/fluid_pass(flow_direction)
+	if (density)
+		return FALSE
+	for(var/obj/O in src)
+		if(!O.fluid_pass(flow_direction))
+			return FALSE
+	return TRUE
+
+/obj/machinery/door/fluid_pass(flow_direction)
+	return !density
+
+/obj/structure/window/fluid_pass(flow_direction)
+	if (is_fulltile)
+		return FALSE
+	if (dir & flow_direction)
+		return FALSE
+	return TRUE
+
+//todo: other stuff like flipped tables? AIs?
+
 
 /obj/fluid/puddle/ex_act()
 	//todo:
@@ -337,6 +385,13 @@ turf/create_puddle_here(add_to_fluids_list = TRUE) //We have a flag here to allo
 
 //todo:
 
+//todo: spreading and sprite mixing both checking for doors and windows but seperate considerations for each (don't spread or mix across a closed door but sprite can work? or not)
+	//todo: also check snaxi puddles and stuff?
+//todo: volume loss over time?
+//todo: avoid returning or transferring to moribund puddles in all cases
+//todo: not updating icon when its slightly above the merge limit?
+//todo: doesn't always update icon when something transfers below the puddle limit?
+//remove unneded procs etc (turf get puddle volume?)
 //todo: seems like "master puddle" is being deleted? instead of just persisting and having the mixing partners go as expected
 //todo: update only color/alpha in cases of post mixing to avoid checking amount since amount doesn't change.
 //todo: may need to move to a datum or thing on a turf? with a list of parcels of fluids
@@ -425,3 +480,5 @@ turf/create_puddle_here(add_to_fluids_list = TRUE) //We have a flag here to allo
 //todo: change flow to keep going to edge?
 //todo: descs here and throughout
 //todo: change defines names?
+//todo: puddle turn into bolus/blob in zero g?
+//todo: fix noit always updaing icon properly after dropping below threshold?

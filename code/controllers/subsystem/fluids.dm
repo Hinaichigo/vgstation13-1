@@ -35,9 +35,10 @@ var/list/nascent_fluids_list = list()
 
 	//todo: use nascent flag or remove?
 
-	message_admins("DEBUG 000 [fluids_list.len]")
+	//message_admins("DEBUG 000 [fluids_list.len]")
 	//Get a random ordering to process the fluids in.
 	if (!resumed)
+
 		var/list/processing_order = list()
 
 		for (var/obj/fluid/F in nascent_fluids_list)
@@ -59,6 +60,13 @@ var/list/nascent_fluids_list = list()
 		currentrun[FLUID_PROCESSING_STAGE_POSTFLOW] = processing_order.Copy()
 		//currentrun = list(processing_order.Copy(), processing_order.Copy(), processing_order.Copy()) //3 copies; for pre-flow, flow, and post-flow steps
 
+	//for debugging (//todo: remove)
+	var/totalvol = 0
+	for (var/obj/fluid/F in (fluids_list + nascent_fluids_list))
+		if (F)
+			totalvol += F.reagents.total_volume
+	//message_admins("Total fluid processing volume before [totalvol]".)
+
 	for (var/obj/fluid/F in fluids_list) //todo: revisit
 		if (F && F.timestopped)
 			F.fluid_flags = FLUID_PROCESSING_SKIP_ALL
@@ -77,8 +85,8 @@ var/list/nascent_fluids_list = list()
 			var/obj/fluid/F = fluids_list[currentrun[fluid_processing_stage][currentrun[fluid_processing_stage].len]]
 			if (F)
 				F.pre_flow()
-			else //todo: remove this?
-				message_admins("ERROR: null fluid in pre-flow step")
+			//else //todo: remove this?
+				//message_admins("ERROR: null fluid in pre-flow step")
 			currentrun[fluid_processing_stage].len--
 		fluid_processing_stage = FLUID_PROCESSING_STAGE_FLOW
 
@@ -89,8 +97,8 @@ var/list/nascent_fluids_list = list()
 			var/obj/fluid/F = fluids_list[currentrun[fluid_processing_stage][currentrun[fluid_processing_stage].len]]
 			if (F && !(F.fluid_flags & FLUID_PROCESSING_SKIP_FLOW))
 				F.handle_flow()
-			else //todo: remove this?
-				message_admins("ERROR: null fluid in flow step")
+			//else //todo: remove this?
+				//message_admins("ERROR: null fluid in flow step")
 			currentrun[fluid_processing_stage].len--
 		fluid_processing_stage = FLUID_PROCESSING_STAGE_POSTFLOW
 
@@ -102,10 +110,15 @@ var/list/nascent_fluids_list = list()
 			var/obj/fluid/F = fluids_list[currentrun[fluid_processing_stage][currentrun[fluid_processing_stage].len]]
 			if (F)
 				F.post_flow()
-			else //todo: remove this?
-				message_admins("ERROR: null fluid in post-flow step")
+			//else //todo: remove this?
+				//message_admins("ERROR: null fluid in post-flow step")
 			currentrun[fluid_processing_stage].len--
 		fluid_processing_stage = FLUID_PROCESSING_STAGE_PREFLOW
+
+//	//todo: fix flag/stage behavior for this
+//	for (var/obj/fluid/puddle/P in fluids_list.Copy()) //todo: move this to base fluids obj?
+//		if (P) //todo: needed?
+//			P.absorb_other_fluids()
 
 /*
 	switch (stage)
@@ -145,9 +158,19 @@ var/list/nascent_fluids_list = list()
 
 */
 
+	//for debugging (//todo: remove)
+	var/totalvol2 = 0
+	for (var/obj/fluid/F in (fluids_list + nascent_fluids_list))
+		if (F)
+			totalvol2 += F.reagents.total_volume
+	if (totalvol2 != totalvol)
+		message_admins("Total fluid processing volume change after - before [totalvol2] - [totalvol] = [totalvol2 - totalvol].")
+
 	//Prepare for the next cycle.
 	for (var/obj/fluid/F in fluids_list.Copy())
 		if (F.fluid_flags & FLUID_PROCESSING_MORIBUND)
+			if (F.reagents.total_volume)
+				message_admins("Warning: deleting fluid [F] with nonzero reagents volume ([F.reagents.total_volume])") //todo: remove debug?
 			fluids_list -= F
 			qdel(F)
 		else if (F.fluid_flags & FLUID_PROCESSING_DELAY_FLAG_RESET)
