@@ -1002,3 +1002,29 @@ its easier to just keep the beam vertical.
 **/
 /atom/proc/attempt_heating(atom/A, mob/user)
 	return
+
+/atom/proc/add_additional_blood_color(var/newcolor) //call this after adding the new blood DNA
+	if(!blood_overlay)
+		return
+	if (!blood_color || !(blood_DNA.len))
+		blood_color = newcolor
+		blood_overlay.color = newcolor
+	else
+		var/weighted_result_color = newcolor
+		var/total_stain_weight_after = get_unique_stain_type_count()
+		if (total_stain_weight_after)
+			weighted_result_color = BlendRGB(blood_color, newcolor, (total_stain_weight_after - 1) / total_stain_weight_after)
+		blood_color = weighted_result_color
+		blood_overlay.color = newcolor
+
+/atom/proc/get_unique_stain_type_count() //this is so eg. mixing the blood of two humans with oil isn't redder than with one human's blood and oil; all non-xeno blood is only counted once.
+	if (blood_DNA?.len)
+		var/stains[0]
+		for (var/this_blood_DNA in blood_DNA)
+			if (findtextEx("A+A-B+B-AB+AB-O+O-", blood_DNA[this_blood_DNA]))
+				stains["blood"]++
+			else if (blood_DNA[this_blood_DNA] == "N/A")
+				stains["blood"]++ //call everything unspecified "blood" just in case
+			else if (blood_DNA[this_blood_DNA])
+				stains[blood_DNA[this_blood_DNA]]++
+		return stains.len
